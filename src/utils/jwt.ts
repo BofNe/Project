@@ -6,32 +6,31 @@ config()
 
 export const signToken = ({
   payload,
-  privatekey = process.env.JWT_SECRET as string,
+  privateKey = process.env.JWT_SECRET as string,
   options = { algorithm: 'HS256' }
 }: {
   payload: string | object | Buffer
-  privatekey?: string
+  privateKey?: string
   options?: jwt.SignOptions
 }) => {
   return new Promise<string>((resolve, reject) => {
-    jwt.sign(payload, privatekey, options, (error, token) => {
+    jwt.sign(payload, privateKey, options, (error, token) => {
       if (error) throw reject(error)
       resolve(token as string)
     })
   })
 }
 
-//hàm kiểm tra token có phải của mìh tạo ra ko
-//nếu có thì trả ra payload
+//hàm kiểm tra token có phải của mình tạo ra không ? nếu có thì trả ra payload
 export const verifyToken = ({
   token,
-  secretOrPublicKey = process.env.JWT_SECRET as string
+  secretOrPublickey = process.env.JWT_SECRET as string
 }: {
   token: string
-  secretOrPublicKey?: string
+  secretOrPublickey?: string
 }) => {
   return new Promise<TokenPayload>((resolve, reject) => {
-    jwt.verify(token, secretOrPublicKey, (error, decoded) => {
+    jwt.verify(token, secretOrPublickey, (error, decoded) => {
       if (error) throw reject(error)
       resolve(decoded as TokenPayload)
     })

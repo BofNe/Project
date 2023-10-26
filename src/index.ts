@@ -16,13 +16,8 @@ app.get('/', (req, res) => {
 app.use('/users', userRouter)
 //localhost:3000/users/tweets
 
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.log(`error handler tong ne`)
-  res.status(err.status).json({ message: err.message })
-})
-
 app.use(defaultErrorHandler)
 
 app.listen(PORT, () => {
-  console.log(`sever đang mở trên port:${PORT}`)
+  console.log(`sever run in port:${PORT}.....`)
 })

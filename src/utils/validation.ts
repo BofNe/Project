@@ -21,15 +21,16 @@ export const validate = (validations: RunnableValidationChains<ValidationChain>)
     for (const key in errorObject) {
       //lấy msg của từng cái lỗi
       const { msg } = errorObject[key]
-      //nếu msg nào có dạng như ErrorWithStatus và có status khác 422 thì ném lỗi cho default error handler xử lý
+      //nếu msg nào có dạng như ErrorWithStatus và có status khác 422 thì ném lỗi
+      //cho default error handler xử lý
       if (msg instanceof ErrorWithStatus && msg.status !== 422) {
         return next(msg)
       }
 
-      // lưu các lỗi 422 từ errorObj vào entityError
+      //lỗi các lỗi 422 từ errorObject vào entityError
       entityError.errors[key] = msg
     }
-    //ở đây nó xử lý luôn rồi  chứ ko ném về error handler tổng
+    //ở đây nó xử lý lỗi luôn, chứ k ném về error handler
     next(entityError)
   }
 }
