@@ -5,6 +5,9 @@ import { registerValidator } from '../middlewares/users.middlewares'
 import { accessTokenValidator, refreshTokenValidator } from '../middlewares/users.middlewares'
 import { logoutController } from '../controllers/users.controllers'
 import { wrapAsync } from '~/utils/handler'
+import { emailVerifyTokenValidator } from '../middlewares/users.middlewares'
+import { verifyEmailController } from '../controllers/users.controllers'
+
 const userRouter = Router()
 
 /*
@@ -34,6 +37,10 @@ nếu mà nhấp vào link thì sẽ tạo ra request gửi lên email_verify_to
 sever kiểm tra email_verify_token có hợp lệ hay ko
 nếu hợp lệ từ decode_email_verify_token lấy used_id
 và vào user_id đó để update email_verify_token thành '', verify = 1, update_at
+path: /users/verify-email
+method: POST
+body: {email_verify_token: string}
  */
 
+userRouter.post('/verify-email', emailVerifyTokenValidator, wrapAsync(verifyEmailController))
 export default userRouter

@@ -8,6 +8,7 @@ import { config } from 'dotenv'
 import { ObjectId } from 'mongodb'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import { USERS_MESSAGES } from '~/constants/messages'
+import { UserVerifyStatus } from '~/constants/enums'
 
 config()
 
@@ -92,6 +93,28 @@ class UsersService {
     return {
       message: USERS_MESSAGES.LOGOUT_SUCCESS
     }
+  }
+
+  async verifyEmail(user_id: string) {
+    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+      {
+        $set: {
+          verify: UserVerifyStatus.Verified,
+          email_verify_token: '',
+          updated_at: '$$NOW'
+        }
+      }
+    ])
+    //tạo ra access_token và refresh_token
+    const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken(user_id)
+    //lưu refresh_token vào database
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({
+        token: refresh_token,
+        user_id: new ObjectId(user_id)
+      })
+    )
+    return { access_token, refresh_token }
   }
 }
 

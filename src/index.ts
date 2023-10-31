@@ -1,7 +1,6 @@
 import express from 'express'
 import userRouter from './routes/users.routes'
 import databaseService from './services/database.services'
-import { Request, Response, NextFunction } from 'express'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
 const app = express()
 app.use(express.json())
