@@ -10,6 +10,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { ErrorWithStatus } from '~/models/Errors'
 import { TokenPayload } from '~/models/requests/User.request'
 import { UserVerifyStatus } from '~/constants/enums'
+import { VerifyEmailReqBody } from '../models/requests/User.request'
 
 export const loginController = async (req: Request, res: Response) => {
   //lấy user_od từ user của req
@@ -41,7 +42,7 @@ export const logoutController = async (req: Request<ParamsDictionary, any, Logou
   res.json(result)
 }
 
-export const verifyEmailController = async (req: Request, res: Response) => {
+export const verifyEmailController = async (req: Request<ParamsDictionary, any, VerifyEmailReqBody>, res: Response) => {
   //nếu mà code vào dc đây nghĩa là email_verify_token đã hợp lệ và mình đã lấy được
   //decode email_verify_token
   const { user_id } = req.decoded_email_verify_token as TokenPayload
@@ -58,6 +59,13 @@ export const verifyEmailController = async (req: Request, res: Response) => {
       message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE
     })
   }
+  //nếu mà ko khớp email_verify_token
+  if (user.email_verify_token !== (req.body.email_verify_token as string)) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.EMAIL_VERIFY_TOKEN_IS_INCORRECT,
+      status: HTTP_STATUS.UNAUTHORIZED
+    })
+  }
   //nếu mà xuống dc đây thì có nghĩa là chưa verify email
   //mình sẽ update lại user đó
   const result = await usersService.verifyEmail(user_id)
@@ -65,4 +73,29 @@ export const verifyEmailController = async (req: Request, res: Response) => {
     message: USERS_MESSAGES.VERIFY_EMAIL_SUCCESS,
     result
   })
+}
+
+export const resendEmailVerifyController = async (req: Request, res: Response) => {
+  //nếu vào đc đây có nghĩa là access_token hợp lệ
+  //và mình đã lấy được decoded_authorization
+  const { user_id } = req.decoded_authorization as TokenPayload
+  //dựa vào user_id tìm user và xem thử nó đã verify chưa ?
+  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+  if (user === null) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.USER_NOT_FOUND,
+      status: HTTP_STATUS.NOT_FOUND
+    })
+  }
+  //nếu bị ban thì ko thể resend email_verify_token
+  if (user.verify === UserVerifyStatus.Banned) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.USER_BANNED, //USER_BANNED: 'User banned'
+      status: HTTP_STATUS.FORBIDDEN //403
+    })
+  }
+  //user này thật sự chưa verify: mình sẽ tạo lại email_verify_token
+  //cập nhật lại user
+  const result = await usersService.resendEmailVerifyToken(user_id)
+  return res.json(result)
 }

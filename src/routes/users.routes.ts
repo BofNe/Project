@@ -1,12 +1,11 @@
 import { Router } from 'express'
-import { loginValidator } from '../middlewares/users.middlewares'
-import { loginController, registerController } from '../controllers/users.controllers'
-import { registerValidator } from '../middlewares/users.middlewares'
+import { loginController, registerController, logoutController } from '../controllers/users.controllers'
+import { registerValidator, loginValidator } from '../middlewares/users.middlewares'
 import { accessTokenValidator, refreshTokenValidator } from '../middlewares/users.middlewares'
-import { logoutController } from '../controllers/users.controllers'
 import { wrapAsync } from '~/utils/handler'
 import { emailVerifyTokenValidator } from '../middlewares/users.middlewares'
 import { verifyEmailController } from '../controllers/users.controllers'
+import { resendEmailVerifyController } from '../controllers/users.controllers'
 
 const userRouter = Router()
 
@@ -43,4 +42,16 @@ body: {email_verify_token: string}
  */
 
 userRouter.post('/verify-email', emailVerifyTokenValidator, wrapAsync(verifyEmailController))
+/*
+des: resend email verify token 
+khi mail thất lạc hoặc  email_verify_token hết hạn hoặc người dùng có nhu cầu resend email_verify_token
+
+
+method: POST
+path: /users/resend-verify-email
+header: {Authorization: 'Bearer <access_token>'} // đăng nhập mới được resend
+body{}
+ */
+userRouter.post('/resend-verify-email', accessTokenValidator, wrapAsync(resendEmailVerifyController))
+
 export default userRouter

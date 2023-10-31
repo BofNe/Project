@@ -116,6 +116,23 @@ class UsersService {
     )
     return { access_token, refresh_token }
   }
+
+  async resendEmailVerifyToken(user_id: string) {
+    //tạo ra email_verify_token
+    const email_verify_token = await this.signEmailVerifyToken(user_id)
+    //update database
+    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+      {
+        $set: {
+          email_verify_token,
+          uppdated_at: '$$NOW'
+        }
+      }
+    ])
+    //giả lập gOMUXi mail
+    console.log(email_verify_token)
+    return { message: USERS_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESS }
+  }
 }
 
 const usersService = new UsersService()
