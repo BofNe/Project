@@ -6,7 +6,7 @@ import { signToken } from '~/utils/jwt'
 import { TokenType } from '~/constants/enums'
 import { config } from 'dotenv'
 import { ObjectId } from 'mongodb'
-import RefreshToken from '~/models/RefreshToken.schema'
+import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import { USERS_MESSAGES } from '~/constants/messages'
 
 config()
