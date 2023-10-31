@@ -206,7 +206,11 @@ export const accessTokenValidator = validate(
             }
             //1.verify cái acces coi có phải của sever tạo ra ko ?
             try {
-              const decoded_authorization = await verifyToken({ token: access_token })
+              const decoded_authorization = await verifyToken({
+                token: access_token,
+                secretOrPublickey: process.env.JWT_SECRET_ACCESS_TOKEN as string
+              })
+              //lấy ra decodes_authorization, lưu vào req, để dùng dần
               ;(req as Request).decoded_authorization = decoded_authorization
             } catch (error) {
               throw new ErrorWithStatus({
@@ -235,13 +239,16 @@ export const refreshTokenValidator = validate(
           options: async (value: string, { req }) => {
             //1.verify cái acces coi có phải của sever tạo ra ko ?
             try {
-              const decoded_refresh_token = await verifyToken({ token: value })
+              const decoded_refresh_token = await verifyToken({
+                token: value,
+                secretOrPublickey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+              })
               const refresh_token = await databaseService.refreshTokens.findOne({
                 token: value
               })
               if (refresh_token === null) {
                 throw new ErrorWithStatus({
-                  message: USERS_MESSAGES.REFRESH_TOKEN_IS_INVALID,
+                  message: USERS_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
                   status: HTTP_STATUS.UNAUTHORIZED
                 })
               }

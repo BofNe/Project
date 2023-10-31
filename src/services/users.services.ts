@@ -12,17 +12,27 @@ import { USERS_MESSAGES } from '~/constants/messages'
 config()
 
 class UsersService {
+  //hàm nhận vào used id
   private signAccessToken(user_id: string) {
     return signToken({
       payload: { user_id, token_type: TokenType.AccessToken },
-      options: { expiresIn: process.env.ACCESS_TOKEN_EXPIRE_IN }
+      options: { expiresIn: process.env.ACCESS_TOKEN_EXPIRE_IN },
+      privateKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
     })
   }
-
   private signRefreshToken(user_id: string) {
     return signToken({
       payload: { user_id, token_type: TokenType.RefreshToken },
-      options: { expiresIn: process.env.REFRESH_TOKEN_EXPIRE_IN }
+      options: { expiresIn: process.env.REFRESH_TOKEN_EXPIRE_IN },
+      privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+    })
+  }
+  //hàm signEmailVerifyToken
+  private signEmailVerifyToken(user_id: string) {
+    return signToken({
+      payload: { user_id, token_type: TokenType.EmailVerifycationToken },
+      options: { expiresIn: process.env.EMAIL_VERIFY_TOKEN_EXPIRE_IN },
+      privateKey: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string
     })
   }
 
@@ -31,17 +41,20 @@ class UsersService {
     return Promise.all([this.signAccessToken(user_id), this.signRefreshToken(user_id)])
   }
   async register(payload: RegisterReqBody) {
+    const user_id = new ObjectId()
+    const email_verify_token = await this.signEmailVerifyToken(user_id.toString())
     const result = await databaseService.users.insertOne(
       new User({
         ...payload,
+        _id: user_id,
+        email_verify_token,
         date_of_birth: new Date(payload.date_of_birth),
         password: hashPassword(payload.password)
       })
     )
-    //lấy user_id từ account vừa tạo
-    const user_id = result.insertedId.toString()
+
     //từ user_id tạo ra 1 access token và 1 refresh token
-    const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken(user_id)
+    const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken(user_id.toString())
     //lưu refresh_token vào database
     await databaseService.refreshTokens.insertOne(
       new RefreshToken({
@@ -49,6 +62,9 @@ class UsersService {
         token: refresh_token
       })
     )
+
+    //giả lập gửi mail
+    console.log(email_verify_token)
     return { access_token, refresh_token }
   }
 
