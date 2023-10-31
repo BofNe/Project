@@ -6,6 +6,10 @@ import { wrapAsync } from '~/utils/handler'
 import { emailVerifyTokenValidator } from '../middlewares/users.middlewares'
 import { verifyEmailController } from '../controllers/users.controllers'
 import { resendEmailVerifyController } from '../controllers/users.controllers'
+import { forgotPasswordValidator } from '../middlewares/users.middlewares'
+import { forgotPasswordController } from '../controllers/users.controllers'
+import { verifyForgotPasswordTokenValidator } from '../middlewares/users.middlewares'
+import { verifyForgotPasswordTokenController } from '../controllers/users.controllers'
 
 const userRouter = Router()
 
@@ -53,5 +57,25 @@ header: {Authorization: 'Bearer <access_token>'} // đăng nhập mới được
 body{}
  */
 userRouter.post('/resend-verify-email', accessTokenValidator, wrapAsync(resendEmailVerifyController))
+
+//khi ngừoi dùng quên mật khẩu, họ gửi email xin mình tạo cho họ forgot-password-token
+/**
+ path: /users/forgot-password
+ method: POST
+ body: {email}
+ */
+userRouter.post('/forgot-password', forgotPasswordValidator, wrapAsync(forgotPasswordController))
+
+/**
+ khi người dùng nhấp vào link trong email để đổi mật khẩu
+ họ sẽ gửi 1 req kèm theo forgot_password_token lên sever
+ sever kiểm tra forgot_password_token co h.Xr hay k?
+ sau đó chuyển hướng ngừoi dùng đến trang reset password
+ */
+userRouter.post(
+  '/verify-forgot-password',
+  verifyForgotPasswordTokenValidator,
+  wrapAsync(verifyForgotPasswordTokenController)
+)
 
 export default userRouter
