@@ -125,7 +125,7 @@ class UsersService {
       {
         $set: {
           email_verify_token,
-          uppdated_at: '$$NOW'
+          updated_at: '$$NOW'
         }
       }
     ])
