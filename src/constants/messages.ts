@@ -61,5 +61,6 @@ export const USERS_MESSAGES = {
   USERNAME_LENGTH_MUST_BE_LESS_THAN_50: 'Username length must be less than 50',
   UPDATE_ME_SUCCESS: 'Update me success',
   USER_ID_IS_REQUIRED: 'User id is required',
-  GET_PROFILE_SUCCESS: 'Get profile success'
+  GET_PROFILE_SUCCESS: 'Get profile success',
+  INVALID_FORGOT_PASSWORD_TOKEN: 'Invalid forgot password token'
 } as const

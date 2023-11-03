@@ -127,7 +127,7 @@ userRouter.patch(
 )
 
 /*
-des: get profile của user khác bằng unsername
+des: get profile của user khác `bằng` username
 path: '/:username'
 method: get
 không cần header vì, chưa đăng nhập cũng có thể xem

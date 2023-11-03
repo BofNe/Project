@@ -20,7 +20,7 @@ import { UserVerifyStatus } from '~/constants/enums'
 import { TokenPayload } from '~/models/requests/User.request'
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//tao bien
+//tao biến
 const passwordSchema: ParamSchema = {
   notEmpty: {
     errorMessage: USERS_MESSAGES.PASSWORD_IS_REQUIRED
@@ -371,56 +371,58 @@ export const forgotPasswordValidator = validate(
   )
 )
 
-export const verifyForgotPasswordTokenValidator = async (req: Request, res: Response) => {
+export const verifyForgotPasswordTokenValidator = validate(
   checkSchema(
     {
       forgot_password_token: {
         trim: true,
         custom: {
           options: async (value, { req }) => {
-            // kiểm tra người dùng có truyển lên email_verify_token
+            //nếu k truyền lên forgot_password_token thì ta sẽ throw error
             if (!value) {
               throw new ErrorWithStatus({
                 message: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_REQUIRED,
-                status: HTTP_STATUS.UNAUTHORIZED
+                status: HTTP_STATUS.UNAUTHORIZED //401
               })
             }
+            //vào messages.ts thêm  FORGOT_PASSWORD_TOKEN_IS_REQUIRED: 'Forgot password token is required'
+            //nếu có thì decode nó để lấy đc thông tin của người dùng
             try {
               const decoded_forgot_password_token = await verifyToken({
                 token: value,
                 secretOrPublickey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string
               })
-              console.log(decoded_forgot_password_token)
-              // sau khi verify ta được payload của forgot_password_token
+              //lưu decoded_forgot_password_token vào req để khi nào muốn biết ai gữi req thì dùng
               ;(req as Request).decoded_forgot_password_token = decoded_forgot_password_token
-
+              //vào type.d.ts thêm decoded_forgot_password_token?: TokenPayload cho Request
+              //dùng user_id trong decoded_forgot_password_token để tìm user trong database
+              //sẽ nhanh hơn là dùng forgot_password_token(value) để tìm user trong database
               const { user_id } = decoded_forgot_password_token
-              //dựa vào user_id tìm user
               const user = await databaseService.users.findOne({
                 _id: new ObjectId(user_id)
               })
-
+              //nếu k tìm đc user thì throw error
               if (user === null) {
                 throw new ErrorWithStatus({
                   message: USERS_MESSAGES.USER_NOT_FOUND,
-                  status: HTTP_STATUS.UNAUTHORIZED
+                  status: HTTP_STATUS.UNAUTHORIZED //401
                 })
               }
+              //nếu forgot_password_token đã được sử dụng rồi thì throw error
+              //forgot_password_token truyền lên khác với forgot_password_token trong database
+              //nghĩa là người dùng đã sử dụng forgot_password_token này rồi
               if (user.forgot_password_token !== value) {
                 throw new ErrorWithStatus({
-                  message: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INCORRECT,
-                  status: HTTP_STATUS.UNAUTHORIZED
+                  message: USERS_MESSAGES.INVALID_FORGOT_PASSWORD_TOKEN,
+                  status: HTTP_STATUS.UNAUTHORIZED //401
                 })
               }
+              //trong messages.ts thêm   INVALID_FORGOT_PASSWORD_TOKEN: 'Invalid forgot password token'
             } catch (error) {
-              //(error as JsonWebTokenError).message sẽ cho chuỗi accesstoken invalid, không đẹp lắm
-              //ta sẽ viết hóa chữ đầu tiên bằng .capitalize() của lodash
-
-              // nếu lỗi sinh ra trong quá trình verify thì mình tạo thành lỗi có status
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
                   message: capitalize((error as JsonWebTokenError).message),
-                  status: HTTP_STATUS.UNAUTHORIZED
+                  status: HTTP_STATUS.UNAUTHORIZED //401
                 })
               }
               throw error
@@ -432,7 +434,7 @@ export const verifyForgotPasswordTokenValidator = async (req: Request, res: Resp
     },
     ['body']
   )
-}
+)
 
 export const resetPasswordValidator = validate(
   checkSchema(

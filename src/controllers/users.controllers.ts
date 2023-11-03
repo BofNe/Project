@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import usersService from '../services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { GetProfileReqParams, LogoutReqBody, RegisterReqBody } from '../models/requests/User.request'
@@ -13,6 +13,7 @@ import { UserVerifyStatus } from '~/constants/enums'
 import { VerifyEmailReqBody } from '../models/requests/User.request'
 import { ResetPasswordReqBody } from '../models/requests/User.request'
 import { UpdateMeReqBody } from '../models/requests/User.request'
+import { VerifyForgotPasswordReqBody } from '../models/requests/User.request'
 
 export const loginController = async (req: Request, res: Response) => {
   //lấy user_od từ user của req
@@ -23,7 +24,7 @@ export const loginController = async (req: Request, res: Response) => {
     user_id: user_id.toString(),
     verify: user.verify
   })
-  //res về acccess_token và refresh_token
+  //res về access_token và refresh_token
   res.json({
     message: USERS_MESSAGES.LOGIN_SUCCESS,
     result
@@ -116,7 +117,15 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
   return res.json(result)
 }
 
-export const verifyForgotPasswordTokenController = async (req: Request, res: Response) => {
+export const verifyForgotPasswordTokenController = async (
+  req: Request<ParamsDictionary, any, VerifyForgotPasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  //nếu đã đến bước này nghĩa là ta đã tìm có forgot_password_token hợp lệ
+  //và đã lưu vào req.decoded_forgot_password_token
+  //thông tin của user
+  //ta chỉ cần thông báo rằng token hợp lệ
   return res.json({
     message: USERS_MESSAGES.VERIFY_FORGOT_PASSWORD_TOKEN_SUCCESS
   })
@@ -128,7 +137,7 @@ export const resetPasswordController = async (
 ) => {
   const { user_id } = req.decoded_forgot_password_token as TokenPayload
   const { password } = req.body
-  //dùng user_id tìm uservà upadate password
+  //dùng user_id tìm user và upadate password
   const result = await usersService.resetPassword({ user_id, password })
   return res.json(result)
 }
