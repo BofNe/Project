@@ -309,6 +309,42 @@ class UsersService {
       message: USERS_MESSAGES.UNFOLLOW_SUCCESS
     }
   }
+
+  async changePassword(user_id: string, password: string) {
+    //tìm user thông qua user_id
+    //cập nhật lại password và forgot_password_token
+    //tất nhiên là lưu password đã hash rồi
+    databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+      {
+        $set: {
+          password: hashPassword(password),
+          forgot_password_token: '',
+          updated_at: '$$NOW'
+        }
+      }
+    ])
+    //nếu bạn muốn ngta đổi mk xong tự động đăng nhập luôn thì trả về access_token và refresh_token
+    //ở đây mình chỉ cho ngta đổi mk thôi, nên trả về message
+    return {
+      message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESS // trong message.ts thêm CHANGE_PASSWORD_SUCCESS: 'Change password success'
+    }
+  }
+
+  async refreshToken(user_id: string, verify: UserVerifyStatus, refresh_token: string) {
+    //tạo mới
+    const [new_access_token, new_refresh_token] = await this.signAccessTokenAndRefreshToken({
+      user_id,
+      verify
+    })
+    //vì một người đăng nhập ở nhiều nơi khác nhau, nên họ sẽ có rất nhiều document trong collection refreshTokens
+    //ta không thể dùng user_id để tìm document cần update, mà phải dùng token, đọc trong RefreshToken.schema.ts
+    await databaseService.refreshTokens.deleteOne({ token: refresh_token }) //xóa refresh
+    //insert lại document mới
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: new_refresh_token })
+    )
+    return { access_token: new_access_token, refresh_token: new_refresh_token }
+  }
   ////////////
 }
 

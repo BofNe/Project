@@ -18,8 +18,8 @@ import { updateMeValidator, unfollowValidator } from '../middlewares/users.middl
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { UpdateMeReqBody } from '~/models/requests/User.request'
 import { getProfileController, unfollowController } from '../controllers/users.controllers'
-import { followValidator } from '../middlewares/users.middlewares'
-import { followController } from '../controllers/users.controllers'
+import { followValidator, changePasswordValidator } from '../middlewares/users.middlewares'
+import { followController, changePasswordController, refreshTokenController } from '../controllers/users.controllers'
 
 const userRouter = Router()
 
@@ -172,4 +172,30 @@ userRouter.delete(
   wrapAsync(unfollowController)
 )
 
+//change password
+/**
+ * des: change password
+ * path: /change-password
+ * method: put
+ * header: {Authorization: Bearer <access_token>}
+ * body: {old_password: string, new_password: string, confirm_password: string}
+ * */
+userRouter.put(
+  '/change-password',
+  accessTokenValidator,
+  verifiedUserValidator,
+  changePasswordValidator,
+  wrapAsync(changePasswordController)
+)
+
+/*
+  des: refreshtoken
+  path: '/refresh-token'
+  method: POST
+  Body: {refresh_token: string}
+g}
+  */
+userRouter.post('/refresh-token', refreshTokenValidator, wrapAsync(refreshTokenController))
+//khỏi kiểm tra accesstoken, tại nó hết hạn rồi mà
+//refreshController chưa làm
 export default userRouter

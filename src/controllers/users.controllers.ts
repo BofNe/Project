@@ -15,6 +15,7 @@ import { ResetPasswordReqBody } from '../models/requests/User.request'
 import { UpdateMeReqBody } from '../models/requests/User.request'
 import { VerifyForgotPasswordReqBody } from '../models/requests/User.request'
 import { FollowReqBody } from '../models/requests/User.request'
+import { ChangePasswordReqBody, RefreshTokenReqBody } from '../models/requests/User.request'
 
 export const loginController = async (req: Request, res: Response) => {
   //lấy user_od từ user của req
@@ -192,4 +193,32 @@ export const unfollowController = async (req: Request<UnfollowReqParams>, res: R
   //gọi hàm unfollow
   const result = await usersService.unfollow(user_id, followed_user_id)
   return res.json(result)
+}
+
+export const changePasswordController = async (
+  req: Request<ParamsDictionary, any, ChangePasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decoded_authorization as TokenPayload //lấy user_id từ decoded_authorization của access_token
+  const { password } = req.body //lấy old_password và password từ req.body
+  const result = await usersService.changePassword(user_id, password) //chưa code changePassword
+  return res.json(result)
+}
+
+export const refreshTokenController = async (
+  req: Request<ParamsDictionary, any, RefreshTokenReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  // khi qua middleware refreshTokenValidator thì ta đã có decoded_refresh_token
+  //chứa user_id và token_type
+  //ta sẽ lấy user_id để tạo ra access_token và refresh_token mới
+  const { user_id, verify } = req.decoded_refresh_token as TokenPayload //lấy refresh_token từ req.body
+  const { refresh_token } = req.body
+  const result = await usersService.refreshToken(user_id, verify, refresh_token) //refreshToken chưa code
+  return res.json({
+    message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESS, //message.ts thêm  REFRESH_TOKEN_SUCCESS: 'Refresh token success',
+    result
+  })
 }

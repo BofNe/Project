@@ -18,6 +18,7 @@ import { capitalize } from 'lodash'
 import { ObjectId } from 'mongodb'
 import { UserVerifyStatus } from '~/constants/enums'
 import { TokenPayload } from '~/models/requests/User.request'
+import { REGEX_USERNAME } from '~/constants/regex'
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //tao biến
@@ -550,12 +551,22 @@ export const updateMeValidator = validate(
           errorMessage: USERS_MESSAGES.USERNAME_MUST_BE_A_STRING ////messages.ts thêm USERNAME_MUST_BE_A_STRING: 'Username must be a string'
         },
         trim: true,
-        isLength: {
-          options: {
-            min: 1,
-            max: 50
-          },
-          errorMessage: USERS_MESSAGES.USERNAME_LENGTH_MUST_BE_LESS_THAN_50 //messages.ts thêm USERNAME_LENGTH_MUST_BE_LESS_THAN_50: 'Username length must be less than 50'
+        //bỏ isLength,vì ta có regex rồi
+        custom: {
+          options: async (value, { req }) => {
+            if (REGEX_USERNAME.test(value) === false) {
+              throw new Error(USERS_MESSAGES.USERNAME_IS_INVALID) //trong message USERNAME_IS_INVALID: 'Username must be a string and length must be 4 - 15, and contain only letters, numbers, and underscores, not only numbers'
+            }
+            //tìm user bằng username
+            const user = await databaseService.users.findOne({
+              username: value
+            })
+            //nếu username đã tồn tại thì throw error
+            if (user) {
+              throw new Error(USERS_MESSAGES.USERNAME_ALREADY_EXISTS) //trong message USERNAME_ALREADY_EXISTS: 'Username already exists'
+            }
+            return true
+          }
         }
       },
       avatar: imageSchema,
@@ -580,5 +591,44 @@ export const unfollowValidator = validate(
       user_id: userIdSchema
     },
     ['params']
+  )
+)
+
+export const changePasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: {
+        ...passwordSchema,
+        custom: {
+          options: async (value, { req }) => {
+            //sau khi qua accestokenValidator thì ta đã có req.decoded_authorization chứa user_id
+            //lấy user_id đó để tìm user trong
+            const { user_id } = req.decoded_authorization as TokenPayload
+            const user = await databaseService.users.findOne({
+              _id: new ObjectId(user_id)
+            })
+            //nếu không có user thì throw error
+            if (!user) {
+              throw new ErrorWithStatus({
+                message: USERS_MESSAGES.USER_NOT_FOUND,
+                status: HTTP_STATUS.UNAUTHORIZED //401
+              })
+            }
+            //nếu có user thì kiểm tra xem password có đúng không
+            const { password } = user
+            const isMatch = password === hashPassword(value)
+            if (!isMatch) {
+              throw new ErrorWithStatus({
+                message: USERS_MESSAGES.OLD_PASSWORD_NOT_MATCH, //trong messages.ts thêm OLD_PASSWORD_NOT_MATCH: 'Old password not match'
+                status: HTTP_STATUS.UNAUTHORIZED //401
+              })
+            }
+          }
+        }
+      },
+      password: passwordSchema,
+      confirm_password: confirmPasswordSchema
+    },
+    ['body']
   )
 )
