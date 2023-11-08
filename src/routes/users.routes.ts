@@ -20,6 +20,7 @@ import { UpdateMeReqBody } from '~/models/requests/User.request'
 import { getProfileController, unfollowController } from '../controllers/users.controllers'
 import { followValidator, changePasswordValidator } from '../middlewares/users.middlewares'
 import { followController, changePasswordController, refreshTokenController } from '../controllers/users.controllers'
+import { oAuthController } from '../controllers/users.controllers'
 
 const userRouter = Router()
 
@@ -198,4 +199,6 @@ g}
 userRouter.post('/refresh-token', refreshTokenValidator, wrapAsync(refreshTokenController))
 //khỏi kiểm tra accesstoken, tại nó hết hạn rồi mà
 //refreshController chưa làm
+userRouter.get('/oauth/google', wrapAsync(oAuthController))
+
 export default userRouter
