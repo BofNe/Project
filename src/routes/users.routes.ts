@@ -14,10 +14,12 @@ import { resetPasswordValidator } from '../middlewares/users.middlewares'
 import { getMeController } from '../controllers/users.controllers'
 import { verifiedUserValidator } from '../middlewares/users.middlewares'
 import { updateMeController } from '../controllers/users.controllers'
-import { updateMeValidator } from '../middlewares/users.middlewares'
+import { updateMeValidator, unfollowValidator } from '../middlewares/users.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { UpdateMeReqBody } from '~/models/requests/User.request'
-import { getProfileController } from '../controllers/users.controllers'
+import { getProfileController, unfollowController } from '../controllers/users.controllers'
+import { followValidator } from '../middlewares/users.middlewares'
+import { followController } from '../controllers/users.controllers'
 
 const userRouter = Router()
 
@@ -27,7 +29,7 @@ path: /users/login
 method: POST
 body: {email, password}
 */
-userRouter.get('/login', loginValidator, wrapAsync(loginController))
+userRouter.post('/login', loginValidator, wrapAsync(loginController))
 
 userRouter.post('/register', registerValidator, wrapAsync(registerController))
 
@@ -134,5 +136,40 @@ không cần header vì, chưa đăng nhập cũng có thể xem
 */
 userRouter.get('/:username', wrapAsync(getProfileController))
 //chưa có controller getProfileController, nên bây giờ ta làm
+
+/*
+des: Follow someone
+path: '/follow'
+method: post
+headers: {Authorization: Bearer <access_token>}
+body: {followed_user_id: string}
+*/
+userRouter.post('/follow', accessTokenValidator, verifiedUserValidator, followValidator, wrapAsync(followController))
+
+//accessTokenValidator dùng dể kiểm tra xem ngta có đăng nhập hay chưa, và có đc user_id của người dùng từ req.decoded_authorization
+//verifiedUserValidator dùng để kiễm tra xem ngta đã verify email hay chưa, rồi thì mới cho follow người khác
+//trong req.body có followed_user_id  là mã của người mà ngta muốn follow
+//followValidator: kiểm tra followed_user_id truyền lên có đúng định dạng objectId hay không
+//  account đó có tồn tại hay không
+//followController: tiến hành thao tác tạo document vào collection followers
+/**
+ * user654b59016b93aac20d647ebe 40
+ * user654b5aa05d99b6140ab0115f 44
+ */
+
+/*
+    des: unfollow someone
+    path: '/follow/:user_id'
+    method: delete
+    headers: {Authorization: Bearer <access_token>}
+  g}
+    */
+userRouter.delete(
+  '/unfollow/:user_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  unfollowValidator,
+  wrapAsync(unfollowController)
+)
 
 export default userRouter
